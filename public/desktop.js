@@ -1,3 +1,4 @@
+
 const socket = io();
 
 let ideas = [];
@@ -29,22 +30,32 @@ socket.on('newIdea', (idea) => {
     updateUI();
 });
 
-document.getElementById('startTimer').addEventListener('click', () => {
-    socket.emit('startTimer');
+document.getElementById('timerButton').addEventListener('click', () => {
+    if (timerStarted) {
+        // Reset timer
+        socket.emit('resetTimer');
+    } else {
+        // Start timer
+        socket.emit('startTimer');
+    }
 });
 
 function updateUI() {
     const timerElement = document.getElementById('timer');
-    const startButton = document.getElementById('startTimer');
+    const timerButton = document.getElementById('timerButton');
     const ideasList = document.getElementById('ideasList');
 
     if (timerStarted) {
         const remainingTime = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
         timerElement.textContent = `Time remaining: ${remainingTime}s`;
-        startButton.disabled = true;
+        timerButton.textContent = 'Reset Timer';
+        timerButton.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+        timerButton.classList.add('bg-red-600', 'hover:bg-red-700');
     } else {
         timerElement.textContent = "Timer not started";
-        startButton.disabled = false;
+        timerButton.textContent = 'Start Timer';
+        timerButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+        timerButton.classList.add('bg-primary-600', 'hover:bg-primary-700');
     }
 
     ideasList.innerHTML = '';

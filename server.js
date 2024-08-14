@@ -12,6 +12,7 @@ app.use(express.static('public'));
 let ideas = [];
 let timerStarted = false;
 let timerEndTime = null;
+let timerInterval;
 
 io.on('connection', (socket) => {
   console.log('A user connected');
@@ -19,16 +20,11 @@ io.on('connection', (socket) => {
   socket.emit('timerStatus', { started: timerStarted, endTime: timerEndTime });
 
   socket.on('startTimer', () => {
-    timerStarted = true;
-    timerEndTime = Date.now() + 60000; // 60 seconds
-    io.emit('timerStarted', timerEndTime);
-    
-    setTimeout(() => {
-      timerStarted = false;
-      timerEndTime = null;
-      io.emit('timerEnded', ideas);
-      ideas = [];
-    }, 60000);
+    startTimer();
+  });
+
+  socket.on('resetTimer', () => {
+    resetTimer();
   });
 
   socket.on('submitIdea', (idea) => {
@@ -42,6 +38,30 @@ io.on('connection', (socket) => {
     console.log('A user disconnected');
   });
 });
+
+function startTimer() {
+  timerStarted = true;
+  timerEndTime = Date.now() + 60000; // 60 seconds
+  io.emit('timerStarted', timerEndTime);
+  
+  clearTimeout(timerInterval);
+  timerInterval = setTimeout(() => {
+    endTimer();
+  }, 60000);
+}
+
+function resetTimer() {
+  endTimer();
+  startTimer();
+}
+
+function endTimer() {
+  timerStarted = false;
+  timerEndTime = null;
+  clearTimeout(timerInterval);
+  io.emit('timerEnded', ideas);
+  ideas = [];
+}
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

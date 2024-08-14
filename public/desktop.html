@@ -1,0 +1,116 @@
+<!-- public/desktop.html -->
+<!doctype html>
+<html lang="en" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Fluency Activity - Desktop</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                50: "#eff6ff",
+                                100: "#dbeafe",
+                                200: "#bfdbfe",
+                                300: "#93c5fd",
+                                400: "#60a5fa",
+                                500: "#3b82f6",
+                                600: "#2563eb",
+                                700: "#1d4ed8",
+                                800: "#1e40af",
+                                900: "#1e3a8a",
+                                950: "#172554",
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <script src="/socket.io/socket.io.js"></script>
+    </head>
+    <body
+        class="bg-gray-900 text-white min-h-screen flex items-center justify-center"
+    >
+        <div class="max-w-4xl w-full p-6 bg-gray-800 rounded-lg shadow-xl">
+            <h1 class="text-3xl font-bold mb-6 text-center">
+                Fluency Activity Dashboard
+            </h1>
+            <div class="flex justify-center mb-6">
+                <button
+                    id="startTimer"
+                    class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded transition duration-300"
+                >
+                    Start Timer
+                </button>
+            </div>
+            <div id="timer" class="text-2xl mb-6 text-center">
+                Timer not started
+            </div>
+            <h2 class="text-2xl font-bold mb-4 text-center">
+                Submitted Ideas:
+            </h2>
+            <div
+                id="ideasList"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            ></div>
+        </div>
+
+        <script>
+            const socket = io();
+            let timerInterval;
+
+            document
+                .getElementById("startTimer")
+                .addEventListener("click", () => {
+                    socket.emit("startTimer");
+                });
+
+            socket.on("timerStarted", (endTime) => {
+                updateTimer(endTime);
+                timerInterval = setInterval(() => updateTimer(endTime), 1000);
+                document.getElementById("startTimer").disabled = true;
+            });
+
+            socket.on("timerEnded", (ideas) => {
+                clearInterval(timerInterval);
+                document.getElementById("timer").textContent = "Time's up!";
+                document.getElementById("startTimer").disabled = false;
+                displayIdeas(ideas);
+            });
+
+            socket.on("newIdea", (idea) => {
+                addIdeaCard(idea);
+            });
+
+            function updateTimer(endTime) {
+                const remainingTime = Math.max(
+                    0,
+                    Math.ceil((endTime - Date.now()) / 1000),
+                );
+                document.getElementById("timer").textContent =
+                    `Time remaining: ${remainingTime}s`;
+                if (remainingTime === 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById("startTimer").disabled = false;
+                }
+            }
+
+            function displayIdeas(ideas) {
+                const list = document.getElementById("ideasList");
+                list.innerHTML = "";
+                ideas.forEach((idea) => addIdeaCard(idea));
+            }
+
+            function addIdeaCard(idea) {
+                const card = document.createElement("div");
+                card.className = "bg-gray-700 p-4 rounded-lg shadow";
+                card.textContent = idea;
+                document.getElementById("ideasList").appendChild(card);
+            }
+        </script>
+    </body>
+</html>
